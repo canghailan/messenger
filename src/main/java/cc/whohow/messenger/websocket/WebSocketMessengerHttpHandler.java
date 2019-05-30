@@ -22,7 +22,7 @@ public class WebSocketMessengerHttpHandler extends SimpleChannelInboundHandler<F
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
-        log.debug(request.uri());
+        log.info(request.uri());
 
         QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
         if (!path.equals(decoder.path())) {
