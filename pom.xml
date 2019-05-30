@@ -104,7 +104,7 @@
 
     <repositories>
         <repository>
-            <id>yitong</id>
+            <id>central</id>
             <url>http://nexus.dev.yitong.com/repository/maven-public/</url>
         </repository>
     </repositories>
