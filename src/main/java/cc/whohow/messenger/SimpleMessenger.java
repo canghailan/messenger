@@ -60,6 +60,6 @@ public class SimpleMessenger implements Messenger {
 
     @Override
     public String toString() {
-        return uid + "@" + tags;
+        return uid + " @ " + tags;
     }
 }

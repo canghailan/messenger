@@ -15,12 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
 
 public class SimpleMessengerService implements MessengerService {
     private static final Logger log = LogManager.getLogger();
     private static final String SYSTEM_UID = "__SYSTEM__";
     private static final Set<String> RESERVED_UID = Collections.singleton(SYSTEM_UID);
-    protected final Map<String, Messenger> messengers = new ConcurrentHashMap<>();
+    protected final Map<Messenger, Long> messengers = new ConcurrentHashMap<>();
     protected final Map<String, Collection<Consumer<Message>>> subscribers = new ConcurrentHashMap<>();
     protected final Clock clock = Clock.systemDefaultZone();
     protected final LongSupplier id = new SnowflakeId(clock, new SnowflakeId.Worker(0));
@@ -140,7 +141,7 @@ public class SimpleMessengerService implements MessengerService {
 
     @Override
     public void subscribe(Messenger messenger, Consumer<Message> subscriber) {
-        messengers.put(messenger.getUid(), messenger);
+        messengers.put(messenger, System.currentTimeMillis());
         for (String tag : messenger.getTags()) {
             subscribers.computeIfAbsent(tag, key -> new ConcurrentLinkedDeque<>()).add(subscriber);
         }
@@ -148,7 +149,7 @@ public class SimpleMessengerService implements MessengerService {
 
     @Override
     public void unsubscribe(Messenger messenger, Consumer<Message> subscriber) {
-        messengers.remove(messenger.getUid());
+        messengers.remove(messenger);
         for (String tag : messenger.getTags()) {
             Collection<Consumer<Message>> s = subscribers.get(tag);
             if (s != null) {
@@ -159,7 +160,7 @@ public class SimpleMessengerService implements MessengerService {
 
     @Override
     public Collection<Messenger> getMessengers() {
-        return Collections.unmodifiableCollection(messengers.values());
+        return Collections.unmodifiableCollection(messengers.keySet());
     }
 
     @Override
@@ -173,7 +174,9 @@ public class SimpleMessengerService implements MessengerService {
     @Override
     public String toString() {
         if (messengers.size() < 16) {
-            return messengers.size() + ": " + messengers.keySet();
+            return messengers.size() + ": " + messengers.keySet().stream()
+                    .map(Messenger::getUid)
+                    .collect(Collectors.joining(", "));
         }
         return String.valueOf(messengers.size());
     }

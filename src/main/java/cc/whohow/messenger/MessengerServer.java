@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -60,6 +57,10 @@ public class MessengerServer implements Runnable {
         return configuration.path("port").asInt(80);
     }
 
+    private int getLogInterval() {
+        return configuration.path("log-interval").asInt(15);
+    }
+
     @Override
     public void run() {
         configuration = getConfiguration();
@@ -74,13 +75,14 @@ public class MessengerServer implements Runnable {
                     .childHandler(newChannelInitializer(messengerService))
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
-            Channel channel = bootstrap.bind(getPort()).sync().channel();
+            ChannelFuture channel = bootstrap.bind(getPort());
+            channel.sync();
+            log.info("listening {}", getPort());
 
             workerGroup.submit(messengerService);
-            workerGroup.scheduleAtFixedRate(this::log, 5, 5, TimeUnit.SECONDS);
+            workerGroup.scheduleAtFixedRate(this::log, 0, getLogInterval(), TimeUnit.SECONDS);
 
-            log.info("listening {}", getPort());
-            channel.closeFuture().sync();
+            channel.channel().closeFuture().sync();
         } catch (Throwable e) {
             log.error("error");
             log.error(e.getMessage(), e);
