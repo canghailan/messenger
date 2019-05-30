@@ -5,10 +5,13 @@ import cc.whohow.messenger.MessengerService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
 public class WebSocketMessengerHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+    private static final Logger log = LogManager.getLogger();
     private final String path;
     private final MessengerService messengerService;
 
@@ -19,6 +22,8 @@ public class WebSocketMessengerHttpHandler extends SimpleChannelInboundHandler<F
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        log.debug(request.uri());
+
         QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
         if (!path.equals(decoder.path())) {
             error(ctx, HttpResponseStatus.NOT_FOUND);
@@ -32,6 +37,7 @@ public class WebSocketMessengerHttpHandler extends SimpleChannelInboundHandler<F
             ctx.fireUserEventTriggered(messenger);
             ctx.fireChannelRead(request.retain());
         } catch (Throwable e) {
+            log.error(e);
             error(ctx, HttpResponseStatus.BAD_REQUEST);
         }
     }
