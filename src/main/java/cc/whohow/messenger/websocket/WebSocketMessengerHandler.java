@@ -12,11 +12,14 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.TimeUnit;
+
 public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
     private static final Logger log = LogManager.getLogger();
     private final MessengerService messengerService;
     private Channel channel;
     private Messenger messenger;
+    private long timestamp;
 
     public WebSocketMessengerHandler(MessengerService messengerService) {
         this.messengerService = messengerService;
@@ -45,6 +48,7 @@ public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextW
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof Messenger) {
             messenger = (Messenger) evt;
+            timestamp = System.currentTimeMillis();
 
             log.info(" online {} {}", channel.id(), messenger);
             messengerService.subscribe(messenger, this::onMessage);
@@ -56,7 +60,8 @@ public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextW
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         if (messenger != null) {
-            log.info("offline {} {}", channel.id(), messenger);
+            long time = System.currentTimeMillis() - timestamp;
+            log.info("offline {} {} {}s", channel.id(), messenger, TimeUnit.MILLISECONDS.toSeconds(time));
             messengerService.unsubscribe(messenger, this::onMessage);
             messengerService.sendEventMessage(messenger, MessageType.OFFLINE.toString());
         }
