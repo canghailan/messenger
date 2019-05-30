@@ -29,19 +29,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.1.1</version>
                 <executions>
@@ -53,7 +40,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>cc.whohow.markup.ws.Server</mainClass>
+                                    <mainClass>cc.whohow.messenger.MessengerServer</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

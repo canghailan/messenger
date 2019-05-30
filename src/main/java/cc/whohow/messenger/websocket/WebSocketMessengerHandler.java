@@ -46,7 +46,7 @@ public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextW
         if (evt instanceof Messenger) {
             messenger = (Messenger) evt;
 
-            log.info("online {} {}", channel.id(), messenger);
+            log.info(" online {} {}", channel.id(), messenger);
             messengerService.subscribe(messenger, this::onMessage);
             messengerService.sendEventMessage(messenger, MessageType.ONLINE.toString());
         }
