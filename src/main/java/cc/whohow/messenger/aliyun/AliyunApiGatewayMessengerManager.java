@@ -88,4 +88,9 @@ public class AliyunApiGatewayMessengerManager implements MessengerManager {
         Closeables.close(redisConnection);
         redisClient.shutdown();
     }
+
+    @Override
+    public String toString() {
+        return "aliyun-api-gateway";
+    }
 }
