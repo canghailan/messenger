@@ -13,6 +13,7 @@ public class AliyunApiGatewayMessageSender implements Consumer<Message> {
 
     @Override
     public void accept(Message message) {
-
+        System.out.println(deviceId);
+        System.out.println(message);
     }
 }

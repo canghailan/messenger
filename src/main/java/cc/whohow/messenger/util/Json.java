@@ -1,6 +1,7 @@
 package cc.whohow.messenger.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
@@ -12,6 +13,10 @@ import java.nio.ByteBuffer;
 
 public class Json {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static ArrayNode newArray() {
+        return OBJECT_MAPPER.createArrayNode();
+    }
 
     public static ObjectNode newObject() {
         return OBJECT_MAPPER.createObjectNode();

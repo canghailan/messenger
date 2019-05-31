@@ -42,37 +42,37 @@ public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextW
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        channel = ctx.channel();
-        super.channelActive(ctx);
+    public void channelActive(ChannelHandlerContext context) throws Exception {
+        channel = context.channel();
+        super.channelActive(context);
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof Messenger) {
-            messenger = (Messenger) evt;
+    public void userEventTriggered(ChannelHandlerContext context, Object e) throws Exception {
+        if (e instanceof Messenger) {
+            messenger = (Messenger) e;
             timestamp = System.currentTimeMillis();
 
             log.info(" online {} {}", channel.id(), messenger);
             messengerService.getMessengerManager().subscribe(messenger, this::onMessage);
             messengerService.sendEventMessage(messenger, MessageType.ONLINE.toString());
         }
-        super.userEventTriggered(ctx, evt);
+        super.userEventTriggered(context, e);
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext context) throws Exception {
         if (messenger != null) {
             long time = System.currentTimeMillis() - timestamp;
             log.info("offline {} {} {}s", channel.id(), messenger, TimeUnit.MILLISECONDS.toSeconds(time));
             messengerService.getMessengerManager().unsubscribe(messenger, this::onMessage);
             messengerService.sendEventMessage(messenger, MessageType.OFFLINE.toString());
         }
-        super.channelInactive(ctx);
+        super.channelInactive(context);
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
         log.error(cause);
     }
 }
