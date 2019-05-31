@@ -1,9 +1,8 @@
-package cc.whohow.messenger.websocket;
+package cc.whohow.messenger.aliyun;
 
 import cc.whohow.messenger.MessageFactory;
 import cc.whohow.messenger.MessageQueue;
 import cc.whohow.messenger.MessengerService;
-import cc.whohow.messenger.SimpleMessengerManager;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -13,20 +12,17 @@ import io.netty.handler.codec.http.HttpServerKeepAliveHandler;
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
-public class WebSocketMessengerInitializer extends
+public class AliyunApiGatewayMessengerInitializer extends
         ChannelInitializer<SocketChannel> {
     private static final int MAX_CONTENT_LENGTH = 65536;
     private static final CorsConfig CORS_CONFIG = CorsConfigBuilder
             .forAnyOrigin()
             .build();
-    private final String path;
-    private final MessengerService<MessageFactory, SimpleMessengerManager, MessageQueue> messengerService;
+    private final MessengerService<MessageFactory, AliyunApiGatewayMessengerManager, MessageQueue> messengerService;
 
-    public WebSocketMessengerInitializer(String path, MessengerService<MessageFactory, SimpleMessengerManager, MessageQueue> messengerService) {
-        this.path = path;
+    public AliyunApiGatewayMessengerInitializer(MessengerService<MessageFactory, AliyunApiGatewayMessengerManager, MessageQueue> messengerService) {
         this.messengerService = messengerService;
     }
 
@@ -38,8 +34,6 @@ public class WebSocketMessengerInitializer extends
         pipeline.addLast(new CorsHandler(CORS_CONFIG));
         pipeline.addLast(new HttpObjectAggregator(MAX_CONTENT_LENGTH));
         pipeline.addLast(new ChunkedWriteHandler());
-        pipeline.addLast(new WebSocketMessengerHttpHandler(path, messengerService));
-        pipeline.addLast(new WebSocketServerProtocolHandler(path, true));
-        pipeline.addLast(new WebSocketMessengerHandler(messengerService));
+        pipeline.addLast(new AliyunApiGatewayMessengerHandler(messengerService));
     }
 }

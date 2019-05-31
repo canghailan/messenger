@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.nio.ByteBuffer;
 
+/**
+ * 消息，JSON格式
+ */
 public interface Message {
     String ID = "_id_";
     String TIMESTAMP = "_timestamp_";

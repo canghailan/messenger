@@ -1,7 +1,10 @@
 package cc.whohow.messenger.kafka;
 
 import cc.whohow.messenger.Message;
-import cc.whohow.messenger.SimpleMessengerService;
+import cc.whohow.messenger.MessageFactory;
+import cc.whohow.messenger.MessengerManager;
+import cc.whohow.messenger.SimpleMessageQueue;
+import cc.whohow.messenger.util.Closeables;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -17,7 +20,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Properties;
 
-public class KafkaMessengerService extends SimpleMessengerService implements Runnable {
+/**
+ * Kafka消息队列
+ */
+public class KafkaMessageQueue extends SimpleMessageQueue {
     private static final Logger log = LogManager.getLogger();
 
     private String topic;
@@ -25,7 +31,8 @@ public class KafkaMessengerService extends SimpleMessengerService implements Run
     private Producer<String, String> producer;
     private Consumer<String, String> consumer;
 
-    public KafkaMessengerService(JsonNode kafka) {
+    public KafkaMessageQueue(JsonNode kafka, MessageFactory messageFactory, MessengerManager messengerManager) {
+        super(messageFactory, messengerManager);
         try {
             // bootstrap.servers
             // group.id
@@ -48,8 +55,7 @@ public class KafkaMessengerService extends SimpleMessengerService implements Run
             producer = new KafkaProducer<>(properties);
             consumer = new KafkaConsumer<>(properties);
         } catch (Throwable e) {
-            close(producer);
-            close(consumer);
+            close();
             throw e;
         }
     }
@@ -82,7 +88,7 @@ public class KafkaMessengerService extends SimpleMessengerService implements Run
                 for (ConsumerRecord<String, String> record : records) {
                     try {
                         log.debug(record.value());
-                        receive(newMessage(record.value()));
+                        receive(messageFactory.newMessage(record.value()));
                     } catch (Throwable e) {
                         log.error("receive {}", record);
                         log.error(e.getMessage(), e);
@@ -96,19 +102,8 @@ public class KafkaMessengerService extends SimpleMessengerService implements Run
     }
 
     @Override
-    public void close() throws Exception {
-        close(producer);
-        close(consumer);
-    }
-
-    private void close(AutoCloseable closeable) {
-        try {
-            if (closeable != null) {
-                closeable.close();
-            }
-        } catch (Throwable e) {
-            log.error("close {}", closeable);
-            log.error(e.getMessage(), e);
-        }
+    public void close() {
+        Closeables.close(producer);
+        Closeables.close(consumer);
     }
 }

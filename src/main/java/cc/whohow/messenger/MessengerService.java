@@ -1,33 +1,20 @@
 package cc.whohow.messenger;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+/**
+ * 消息服务
+ */
+public interface MessengerService<MF extends MessageFactory, MM extends MessengerManager, MQ extends MessageQueue> extends Runnable, AutoCloseable {
+    MF getMessageFactory();
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.function.Consumer;
+    MM getMessengerManager();
 
-public interface MessengerService extends Runnable, AutoCloseable {
-    Message newMessage(String message);
+    MQ getMessageQueue();
 
-    Message newMessage(ByteBuffer message);
-
-    Message newMessage(ObjectNode message);
-
-    Message newErrorMessage(Messenger to, String message, Throwable e);
-
-    Messenger newMessenger(String uid, String tags);
-
-    Messenger newMessenger(String uid, Collection<String> tags);
+    Message newErrorMessage(Messenger to, String context, Throwable e);
 
     void send(Messenger from, Message message);
 
     void sendEventMessage(Messenger messenger, String event);
 
     void sendSystemMessage(Message message);
-
-    void subscribe(Messenger messenger, Consumer<Message> subscriber);
-
-    void unsubscribe(Messenger messenger, Consumer<Message> subscriber);
-
-    Collection<Messenger> getMessengers();
 }

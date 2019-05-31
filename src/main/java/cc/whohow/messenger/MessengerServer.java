@@ -1,12 +1,18 @@
 package cc.whohow.messenger;
 
-import cc.whohow.messenger.kafka.KafkaMessengerService;
+import cc.whohow.messenger.aliyun.AliyunApiGatewayMessengerInitializer;
+import cc.whohow.messenger.aliyun.AliyunApiGatewayMessengerManager;
+import cc.whohow.messenger.kafka.KafkaMessageQueue;
+import cc.whohow.messenger.util.Closeables;
 import cc.whohow.messenger.websocket.WebSocketMessengerInitializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -16,10 +22,13 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 消息服务器
+ */
 public class MessengerServer implements Runnable {
     private static final Logger log = LogManager.getLogger();
     private JsonNode configuration;
-    private MessengerService messengerService;
+    private MessengerService<?, ?, ?> messengerService;
 
     public static JsonNode getConfiguration() {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
@@ -39,18 +48,42 @@ public class MessengerServer implements Runnable {
         new MessengerServer().run();
     }
 
-    private ChannelInitializer<SocketChannel> newChannelInitializer(MessengerService messengerService) {
+    private ChannelInitializer<SocketChannel> newChannelInitializer() {
+        // 阿里云网关
+        JsonNode aliyun = configuration.get("aliyun-gw");
+        if (aliyun != null) {
+            AliyunApiGatewayMessengerManager messengerManager = new AliyunApiGatewayMessengerManager(aliyun);
+            MessengerService<MessageFactory, AliyunApiGatewayMessengerManager, MessageQueue> messengerService =
+                    new SimpleMessengerService<MessageFactory, AliyunApiGatewayMessengerManager, MessageQueue>(
+                            newMessageFactory(), messengerManager, this::newMessageQueue);
+            this.messengerService = messengerService;
+            return new AliyunApiGatewayMessengerInitializer(messengerService);
+        }
+
+        // 默认，WebSocket
         JsonNode ws = configuration.path("ws");
         String path = ws.path("path").asText("/ws/");
+        SimpleMessengerManager messengerManager = new SimpleMessengerManager();
+        MessengerService<MessageFactory, SimpleMessengerManager, MessageQueue> messengerService =
+                new SimpleMessengerService<MessageFactory, SimpleMessengerManager, MessageQueue>(
+                        newMessageFactory(), messengerManager, this::newMessageQueue);
+        this.messengerService = messengerService;
         return new WebSocketMessengerInitializer(path, messengerService);
     }
 
-    private MessengerService newMessengerService() {
+    private MessageFactory newMessageFactory() {
+        return new SimpleMessageFactory();
+    }
+
+    private MessageQueue newMessageQueue(MessageFactory messageFactory, MessengerManager messengerManager) {
+        // Kafka消息队列
         JsonNode kafka = configuration.get("kafka");
         if (kafka != null) {
-            return new KafkaMessengerService(kafka);
+            return new KafkaMessageQueue(kafka, messageFactory, messengerManager);
         }
-        return new SimpleMessengerService();
+
+        // 默认简单消息队列，直接转发
+        return new SimpleMessageQueue(messageFactory, messengerManager);
     }
 
     private int getPort() {
@@ -67,12 +100,10 @@ public class MessengerServer implements Runnable {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
-            messengerService = newMessengerService();
-
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(newChannelInitializer(messengerService))
+                    .childHandler(newChannelInitializer())
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
             ChannelFuture channel = bootstrap.bind(getPort());
@@ -90,10 +121,11 @@ public class MessengerServer implements Runnable {
             log.info("shutdown");
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
+            Closeables.close(messengerService);
         }
     }
 
-    public void log() {
+    private void log() {
         log.info(messengerService);
     }
 }

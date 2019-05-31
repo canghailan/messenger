@@ -1,7 +1,6 @@
 package cc.whohow.messenger.websocket;
 
-import cc.whohow.messenger.Messenger;
-import cc.whohow.messenger.MessengerService;
+import cc.whohow.messenger.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
@@ -10,12 +9,15 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
+/**
+ * WebSocket连接处理
+ */
 public class WebSocketMessengerHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger log = LogManager.getLogger();
     private final String path;
-    private final MessengerService messengerService;
+    private final MessengerService<MessageFactory, SimpleMessengerManager, MessageQueue> messengerService;
 
-    public WebSocketMessengerHttpHandler(String path, MessengerService messengerService) {
+    public WebSocketMessengerHttpHandler(String path, MessengerService<MessageFactory, SimpleMessengerManager, MessageQueue> messengerService) {
         this.path = path;
         this.messengerService = messengerService;
     }
@@ -33,7 +35,7 @@ public class WebSocketMessengerHttpHandler extends SimpleChannelInboundHandler<F
         try {
             String uid = getParameter(decoder, "uid");
             String tags = getParameter(decoder, "tags");
-            Messenger messenger = messengerService.newMessenger(uid, tags);
+            Messenger messenger = messengerService.getMessengerManager().newMessenger(uid, tags);
             ctx.fireUserEventTriggered(messenger);
             ctx.fireChannelRead(request.retain());
         } catch (Throwable e) {

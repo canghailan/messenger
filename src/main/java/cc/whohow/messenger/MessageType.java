@@ -1,5 +1,8 @@
 package cc.whohow.messenger;
 
+/**
+ * 消息类型
+ */
 public enum MessageType {
     ERROR("error"),
     ONLINE("online"),

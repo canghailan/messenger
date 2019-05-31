@@ -1,25 +1,18 @@
 package cc.whohow.messenger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cc.whohow.messenger.util.Json;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.Unpooled;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class SimpleMessage implements Message {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private ObjectNode json;
     private ByteBuffer bytes;
     private String string;
 
     public SimpleMessage() {
-        this(OBJECT_MAPPER.createObjectNode());
+        this(Json.newObject());
     }
 
     public SimpleMessage(ObjectNode json) {
@@ -55,11 +48,7 @@ public class SimpleMessage implements Message {
             return bytes;
         }
         if (json != null) {
-            try {
-                return bytes = ByteBuffer.wrap(OBJECT_MAPPER.writeValueAsBytes(json));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            return bytes = Json.serialize(json);
         }
         if (string != null) {
             return bytes = StandardCharsets.UTF_8.encode(string);
@@ -73,18 +62,10 @@ public class SimpleMessage implements Message {
             return json;
         }
         if (bytes != null) {
-            try (InputStream stream = new ByteBufInputStream(Unpooled.wrappedBuffer(bytes))) {
-                return json = OBJECT_MAPPER.readValue(stream, ObjectNode.class);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            return json = Json.deserialize(bytes, ObjectNode.class);
         }
         if (string != null) {
-            try {
-                return json = OBJECT_MAPPER.readValue(string, ObjectNode.class);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            return json = Json.parse(string, ObjectNode.class);
         }
         throw new IllegalStateException();
     }
