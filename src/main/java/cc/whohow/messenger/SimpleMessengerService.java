@@ -66,12 +66,23 @@ public class SimpleMessengerService<MF extends MessageFactory, MM extends Messen
     }
 
     @Override
-    public void send(Messenger from, Message message) {
-        messageQueue.send(initialize(from, message));
+    public Message send(Messenger from, Message message) {
+        return send(initialize(from, message));
     }
 
     @Override
-    public void sendEventMessage(Messenger messenger, String event) {
+    public Message sendSystemMessage(Message message) {
+        ObjectNode messageObject = message.toJson();
+        messageObject.put(Message.ID, String.valueOf(id.getAsLong()));
+        messageObject.put(Message.TIMESTAMP, clock.millis());
+        if (messageObject.path(Message.FROM).asText("").isEmpty()) {
+            messageObject.put(Message.FROM, Messenger.SYSTEM_UID);
+        }
+        return send(messageFactory.newMessage(messageObject));
+    }
+
+    @Override
+    public void broadcastEventMessage(Messenger messenger, String event) {
         for (String tag : messenger.getTags()) {
             ObjectNode messageObject = Json.newObject();
             messageObject.put(Message.ID, String.valueOf(id.getAsLong()));
@@ -84,15 +95,6 @@ public class SimpleMessengerService<MF extends MessageFactory, MM extends Messen
         }
     }
 
-    @Override
-    public void sendSystemMessage(Message message) {
-        ObjectNode messageObject = message.toJson();
-        messageObject.put(Message.ID, String.valueOf(id.getAsLong()));
-        messageObject.put(Message.TIMESTAMP, clock.millis());
-        messageObject.put(Message.FROM, Messenger.SYSTEM_UID);
-        messageQueue.send(messageFactory.newMessage(messageObject));
-    }
-
     protected Message initialize(Messenger from, Message message) {
         String to = message.getTo();
         if (Text.isEmpty(to)) {
@@ -103,6 +105,11 @@ public class SimpleMessengerService<MF extends MessageFactory, MM extends Messen
         object.put(Message.TIMESTAMP, clock.millis());
         object.put(Message.FROM, from.getUid());
         return messageFactory.newMessage(object);
+    }
+
+    protected Message send(Message message) {
+        messageQueue.send(message);
+        return message;
     }
 
     @Override

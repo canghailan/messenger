@@ -16,4 +16,11 @@ public class Netty {
         context.write(response);
         context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
+
+    public static void send(ChannelHandlerContext context, Object body) {
+        HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+        context.write(response);
+        context.write(body);
+        context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+    }
 }

@@ -3,6 +3,7 @@ package cc.whohow.messenger.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 
@@ -39,7 +40,11 @@ public class Json {
     }
 
     public static <T> T deserialize(ByteBuffer json, Class<T> type) {
-        try (InputStream stream = new ByteBufInputStream(Unpooled.wrappedBuffer(json))) {
+        return deserialize(Unpooled.wrappedBuffer(json), type);
+    }
+
+    public static <T> T deserialize(ByteBuf json, Class<T> type) {
+        try (InputStream stream = new ByteBufInputStream(json)) {
             return OBJECT_MAPPER.readValue(stream, type);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

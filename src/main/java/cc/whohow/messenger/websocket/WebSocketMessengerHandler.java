@@ -55,7 +55,7 @@ public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextW
 
             log.info(" online {} {}", channel.id(), messenger);
             messengerService.getMessengerManager().subscribe(messenger, this::onMessage);
-            messengerService.sendEventMessage(messenger, MessageType.ONLINE.toString());
+            messengerService.broadcastEventMessage(messenger, MessageType.ONLINE.toString());
         }
         super.userEventTriggered(context, e);
     }
@@ -66,7 +66,7 @@ public class WebSocketMessengerHandler extends SimpleChannelInboundHandler<TextW
             long time = System.currentTimeMillis() - timestamp;
             log.info("offline {} {} {}s", channel.id(), messenger, TimeUnit.MILLISECONDS.toSeconds(time));
             messengerService.getMessengerManager().unsubscribe(messenger, this::onMessage);
-            messengerService.sendEventMessage(messenger, MessageType.OFFLINE.toString());
+            messengerService.broadcastEventMessage(messenger, MessageType.OFFLINE.toString());
         }
         super.channelInactive(context);
     }

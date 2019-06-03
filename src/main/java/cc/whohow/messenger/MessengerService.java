@@ -12,9 +12,9 @@ public interface MessengerService<MF extends MessageFactory, MM extends Messenge
 
     Message newErrorMessage(Messenger to, String context, Throwable e);
 
-    void send(Messenger from, Message message);
+    Message send(Messenger from, Message message);
 
-    void sendEventMessage(Messenger messenger, String event);
+    Message sendSystemMessage(Message message);
 
-    void sendSystemMessage(Message message);
+    void broadcastEventMessage(Messenger messenger, String event);
 }
